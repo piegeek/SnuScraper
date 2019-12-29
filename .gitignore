@@ -7,6 +7,12 @@ __pycache__/
 # venv
 venv/
 
+# xls
+xls/
+
+# instance
+instance/
+
 # pyc files
 *.pyc
 
@@ -15,3 +21,7 @@ Params.txt
 
 # Excel files
 *.xls
+
+# Config files
+*.config
+*.cfg
