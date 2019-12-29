@@ -1,15 +1,17 @@
 import json
-import sqlalchemy as db
+from pymongo import MongoClient
 
 config = dict()
 
 with open('SnuScraper.cfg', 'r+', encoding='utf-8') as config_file:
     config_data = json.loads(config_file.read())
     
-    config['DATABASE_URI'] = config_data['DATABASE_URI']
+    config['CONNECTION_STRING'] = config_data['CONNECTION_STRING']
     config['SITE_URL'] = config_data['SITE_URL']
     
     with open(config_data['PARAMS_FILE'], 'r+', encoding='utf-8') as params:
         config['PARAMS'] = json.loads(params.read())
 
-engine = db.create_engine(config['DATABASE_URI'])
+
+client = MongoClient(config['CONNECTION_STRING'])
+db = client.SnuScraperLocalTest

@@ -1,7 +1,8 @@
 import requests
+import json
 import pandas as pd
 from os.path import join
-from SnuScraper import config
+from SnuScraper import config, db
 
 class SnuScraper(object):
 
@@ -35,15 +36,39 @@ class SnuScraper(object):
         with open(join('xls', filename), 'wb') as output_file:
             output_file.write(self.get_spread_sheet())
 
-    def load_spread_sheet(self):
+    def load_spread_sheet(self, filename):
         '''
         Load an excel spreadsheet into a pandas dataframe object
         '''
-        df = pd.read_excel(self._xls_file)
+        filepath = join('xls', filename)
+        df = pd.read_excel(filepath, skiprows=[0,1])
         return df
 
-    def save_to_db(self):
-        pass
+    def get_lecture_list(self, df):
+        '''
+        Return a list of dict objects for each lecture
+        '''
+
+        lectures = []
+        columns = [column for column in df.columns]
+
+        for index, row in df.iterrows():
+            lecture = {}
+            for column in columns:
+                lecture[column] = row[column]
+            lecture['isFull'] = int(lecture['정원'].split(' ')[0]) <= int(lecture['수강신청인원'])
+            lectures.append(lecture)
+
+        return lectures
+    
+    def save_df_to_db(self, df):
+        '''
+        Save data in dataframe to database
+        '''
+        lectures = self.get_lecture_list(df)
+        for lecture in lectures:
+            db.lectures.insert_one(lecture)
+           
 
     def run(self):
         '''
