@@ -1,0 +1,17 @@
+# vscode config directory
+.vscode/
+
+# __pycache__ directory
+__pycache__/
+
+# venv
+venv/
+
+# pyc files
+*.pyc
+
+# Params.txt
+Params.txt
+
+# Excel files
+*.xls
