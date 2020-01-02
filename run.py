@@ -1,8 +1,10 @@
+from SnuScraper import client
 from SnuScraper.scraper import SnuScraper, init_scraper
 import json
 import time
 
-app = SnuScraper('2020', '1학기', 'U000200001U000300001', 790)
-old_app = SnuScraper('2017', '1학기', 'U000200001U000300001', 25)
+db = client.SSLT2020SPRING
+
+app = SnuScraper('2020', '1학기', 'U000200001U000300001', 790, db)
 
 init_scraper(app)

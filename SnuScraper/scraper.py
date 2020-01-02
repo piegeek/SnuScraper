@@ -4,11 +4,11 @@ import pandas as pd
 from os.path import join
 from copy import copy
 from bs4 import BeautifulSoup
-from SnuScraper import config, db
+from SnuScraper import config
 
 class SnuScraper(object):
 
-    def __init__(self, year, season, id, max_page_num):
+    def __init__(self, year, season, id, max_page_num, db):
         '''
         site_url: URL of server
         params: Parameters for a post request
@@ -22,6 +22,7 @@ class SnuScraper(object):
         self.id = id
         self.season = season
         self.max_page_num = max_page_num
+        self.db = db
 
         self.set_params()
 
@@ -87,7 +88,7 @@ class SnuScraper(object):
         '''
         lectures = self.get_lecture_list(df)
         for lecture in lectures:
-            db.lectures.insert_one(lecture)
+            self.db.lectures.insert_one(lecture)
            
     def get_page_student_nums(self, page_num):
         '''
@@ -125,6 +126,9 @@ def init_scraper(scraper_app):
     seasons = ['1학기', '여름학기', '2학기', '겨울학기']
     if int(scraper_app.year) >= 2019 and scraper_app.season in seasons:
         scraper_app.save_spread_sheet(f'{scraper_app.year}-{scraper_app.season}.xls')
+
+        df = scraper_app.load_spread_sheet(f'{scraper_app.year}-{scraper_app.season}.xls')
+        scraper_app.save_df_to_db(df)
     else:
         raise ValueError(
             '''

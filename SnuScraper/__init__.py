@@ -15,4 +15,4 @@ with open('SnuScraper.cfg', 'r+', encoding='utf-8') as config_file:
 
 
 client = MongoClient(config['CONNECTION_STRING'])
-db = client.SnuScraperLocalTest
+# db = client.SSLT2020SPRING
