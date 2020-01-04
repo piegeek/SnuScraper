@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 import pandas as pd
 from os.path import join
 from copy import copy
@@ -18,7 +19,7 @@ class SnuScraper(object):
         self._site_url = config['SITE_URL']
         self._excel_url = config['EXCEL_URL']
         self._params = copy(config['PARAMS'])
-        self._time_interval = 3000
+        self._time_interval = 7
         self.year = year
         self.id = id
         self.season = season
@@ -34,7 +35,15 @@ class SnuScraper(object):
         self._params['currShtmNm'] = self.season
 
     def set_time_interval(self, time_interval):
-        self._time_interval = time_interval
+        '''
+        Set the time interval(in minutes) for the scraper to send requests to the server
+        and update the db after every specified time interval passes. 
+        '''
+        
+        if 1 <= time_interval <=20:
+            self._time_interval = time_interval
+        else:
+            raise ValueError('Parameter \'time_interval\' of function \'set_time_interval\' must be between a value of 1 and 20')
     
     def get_spread_sheet(self):
         '''
@@ -144,13 +153,20 @@ class SnuScraper(object):
 
     def run(self):
         '''
-        Send a request to the server and update spreadsheet
-        every 'time_interval' milliseconds 
+        Send a request to the server and update database
+        every 'time_interval' minutes 
         '''
-        pass
+        while True:
+            print('Running...')
+            self.update_db
+            time.sleep(self._time_interval * 60)
+
+            
 
 
-def init_scraper(scraper_app):
+def init_scraper(scraper_app, time_interval):
+    scraper_app.set_time_interval(time_interval)
+    
     seasons = ['1학기', '여름학기', '2학기', '겨울학기']
     if int(scraper_app.year) >= 2019 and scraper_app.season in seasons:
         scraper_app.save_spread_sheet(f'{scraper_app.year}-{scraper_app.season}.xls')
