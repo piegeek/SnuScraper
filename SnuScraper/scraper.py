@@ -3,6 +3,7 @@ import json
 import pandas as pd
 from os.path import join
 from copy import copy
+from bson.objectid import ObjectId
 from bs4 import BeautifulSoup
 from SnuScraper import config
 
@@ -113,6 +114,33 @@ class SnuScraper(object):
                 find_number.append(data[i].getText())
 
         return find_number
+
+    def update_db(self):
+        '''
+        Update student number for each lecture in the database
+        '''
+        updated_nums = []
+
+        for i in range(1, self.max_page_num + 1):
+            updated_nums_for_page = self.get_page_student_nums(i)
+            for num in updated_nums_for_page:
+                updated_nums.append(int(num))
+
+        cursors = self.db.lectures.find()
+        nums_id = 0
+
+        for cursor in cursors:
+            id = cursor['_id']
+
+            query = {'_id': ObjectId(id)}
+            new_values = {'$set': { '수강신청인원': updated_nums[nums_id] } }
+            try:
+                self.db.lectures.update_one(query, new_values)
+            except IndexError:
+                continue
+
+            nums_id += 1
+
 
     def run(self):
         '''
