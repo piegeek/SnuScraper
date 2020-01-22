@@ -144,12 +144,16 @@ class SnuScraper(object):
         params['pageNo'] = str(page_num)
         params['workType'] = 'S'
         
-        res = requests.post(self._site_url, params)
+        find_data = []
+
+        try:
+            res = requests.post(self._site_url, params)
+        except requests.exceptions.RequestException as RequestException:
+            print(RequestException)
+            return find_data
 
         soup = BeautifulSoup(res.content, 'html.parser')
         data = soup.findAll('td', { 'rowspan': True })
-
-        find_data = []
 
         for i in range(len(data[1:])):
             if i % 15 == 14:
