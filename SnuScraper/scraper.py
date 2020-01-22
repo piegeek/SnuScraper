@@ -104,7 +104,7 @@ class SnuScraper(object):
         for lecture in lectures:
             self.db.lectures.insert_one(lecture)
            
-    def get_page_student_nums(self, page_num):
+    def get_page_student_data(self, page_num):
         '''
         Return list of number of students for each course on the page
         '''
@@ -120,38 +120,29 @@ class SnuScraper(object):
         soup = BeautifulSoup(res.content, 'html.parser')
         data = soup.findAll('td', { 'rowspan': True })
 
-        if self.debug == True:            
-            find_data = []
+        find_data = []
 
-            for i in range(len(data[1:])):
-                if i % 15 == 14:
-                    lecture_data = {
-                        '교과목번호': data[i - 7].getText(),
-                        '강좌번호': data[i - 6].getText(),
-                        '수강신청인원': int(data[i].getText())
-                    }
-                    find_data.append(lecture_data)
-            
-            return find_data 
-        else:
-            find_number = []
-
-            for i in range(len(data[1:])):
-                if i % 15 == 14:
-                    find_number.append(data[i].getText())
-
-            return find_number
+        for i in range(len(data[1:])):
+            if i % 15 == 14:
+                lecture_data = {
+                    '교과목번호': data[i - 7].getText(),
+                    '강좌번호': int(data[i - 6].getText()),
+                    '수강신청인원': int(data[i].getText())
+                }
+                find_data.append(lecture_data)
+        
+        return find_data 
 
 
     def get_student_data(self):
-        updated_student_nums = []
+        updated_student_data = []
 
         for i in range(1, self.max_page_num + 1):
-            updated_nums_for_page = self.get_page_student_nums(i)
-            for num in updated_nums_for_page:
-                updated_student_nums.append(int(num))
+            updated_data = self.get_page_student_data(i)
+            for data in updated_data:
+                updated_student_data.append(data)
 
-        return updated_student_nums
+        return updated_student_data
     
     
     def update_db(self, debug_data = None):
@@ -164,49 +155,52 @@ class SnuScraper(object):
         else:
             updated_nums = self.get_student_data()
 
-        cursors = self.db.lectures.find()
-        nums_id = 0
+        updated_nums_data = updated_nums
+        
+        for data in updated_nums_data:
+            updated_num = data['수강신청인원']
+            lecture = self.db.lectures.find_one({ '교과목번호': data['교과목번호'], '강좌번호': data['강좌번호'] })
 
-        for cursor in cursors:
-            id = cursor['_id']
-            max_student_num = int(cursor['정원'].split(' ')[0])
-            title = cursor['교과목명']
-            is_full = cursor['isFull']
+            if lecture == None:
+                print(data)
+                return
 
-            query = {'_id': ObjectId(id)}
+            id = lecture['_id']
+            max_student_num = int(lecture['정원'].split(' ')[0])
+            is_full = lecture['isFull']
+            title = lecture['교과목명']
 
-            if updated_nums[nums_id] < max_student_num and is_full == True:
-                new_values = {'$set': { '수강신청인원': updated_nums[nums_id], 'isFull': False }}
-                users = cursor['users']
+            query = { '_id': ObjectId(id) }
+
+            if updated_num < max_student_num and is_full == True:
+                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
+
+                users = lecture['users']
 
                 # Send FCM messages
-                
                 for user in users:
                     user_token = user
                     message = messaging.Message(
-                        notification = {
-                            'title': '수강신청 빈자리 알림',
-                            'body': f'강좌 {title}에 빈자리가 생겼습니다.'
-                        },
+                        notification = messaging.Notification(
+                            title= '수강신청 빈자리 알림',
+                            body= f'강좌 {title}에 빈자리가 생겼습니다.'
+                        ),
                         token = str(user_token)
                     )
                     response = messaging.send(message)
                     print(f'Successfully sent message: {response}')
 
-            elif updated_nums[num_id] >= max_student_num and is_full == False:
-                new_values = {'$set': { '수강신청인원': updated_nums[nums_id], 'isFull': True }}
+            elif updated_num >= max_student_num and is_full == False:
+               new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
 
             else:
-                new_values = {'$set': { '수강신청인원': updated_nums[nums_id] } }
-                
+                new_values = {'$set': { '수강신청인원': updated_num } }
+
             # Update database
             try:
                 self.db.lectures.update_one(query, new_values)
-            except IndexError:
+            except ValueError:
                 continue
-
-            nums_id += 1
-
 
     def run(self):
         '''
