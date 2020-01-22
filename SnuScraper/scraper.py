@@ -2,6 +2,8 @@ import requests
 import json
 import time
 import pandas as pd
+import firebase_admin
+from firebase_admin import messaging
 from os.path import join
 from copy import copy
 from bson.objectid import ObjectId
@@ -10,7 +12,7 @@ from SnuScraper import config
 
 class SnuScraper(object):
 
-    def __init__(self, year, season, id, max_page_num, db):
+    def __init__(self, year, season, id, max_page_num, db, debug=False):
         '''
         site_url: URL of server
         params: Parameters for a post request
@@ -25,6 +27,8 @@ class SnuScraper(object):
         self.season = season
         self.max_page_num = max_page_num
         self.db = db
+        self.admin = firebase_admin.initialize_app()
+        self.debug = debug
 
         self.set_params()
 
@@ -116,33 +120,86 @@ class SnuScraper(object):
         soup = BeautifulSoup(res.content, 'html.parser')
         data = soup.findAll('td', { 'rowspan': True })
 
-        find_number = []
+        if self.debug == True:            
+            find_data = []
 
-        for i in range(len(data[1:])):
-            if i % 15 == 14:
-                find_number.append(data[i].getText())
+            for i in range(len(data[1:])):
+                if i % 15 == 14:
+                    lecture_data = {
+                        '교과목번호': data[i - 7].getText(),
+                        '강좌번호': data[i - 6].getText(),
+                        '수강신청인원': int(data[i].getText())
+                    }
+                    find_data.append(lecture_data)
+            
+            return find_data 
+        else:
+            find_number = []
 
-        return find_number
+            for i in range(len(data[1:])):
+                if i % 15 == 14:
+                    find_number.append(data[i].getText())
 
-    def update_db(self):
-        '''
-        Update student number for each lecture in the database
-        '''
-        updated_nums = []
+            return find_number
+
+
+    def get_student_data(self):
+        updated_student_nums = []
 
         for i in range(1, self.max_page_num + 1):
             updated_nums_for_page = self.get_page_student_nums(i)
             for num in updated_nums_for_page:
-                updated_nums.append(int(num))
+                updated_student_nums.append(int(num))
+
+        return updated_student_nums
+    
+    
+    def update_db(self, debug_data = None):
+        '''
+        Update student number for each lecture in the database
+        '''
+        
+        if self.debug == True and debug_data != None:
+            updated_nums = debug_data
+        else:
+            updated_nums = self.get_student_data()
 
         cursors = self.db.lectures.find()
         nums_id = 0
 
         for cursor in cursors:
             id = cursor['_id']
+            max_student_num = int(cursor['정원'].split(' ')[0])
+            title = cursor['교과목명']
+            is_full = cursor['isFull']
 
             query = {'_id': ObjectId(id)}
-            new_values = {'$set': { '수강신청인원': updated_nums[nums_id] } }
+
+            if updated_nums[nums_id] < max_student_num and is_full == True:
+                new_values = {'$set': { '수강신청인원': updated_nums[nums_id], 'isFull': False }}
+                users = cursor['users']
+
+                # Send FCM messages
+                
+                for user in users:
+                    user_token = user
+                    message = messaging.Message(
+                        notification = {
+                            'title': '수강신청 빈자리 알림',
+                            'body': f'강좌 {title}에 빈자리가 생겼습니다.'
+                        },
+                        token = str(user_token)
+                    )
+                    response = messaging.send(message)
+                    print(f'Successfully sent message: {response}')
+
+            elif updated_nums[num_id] >= max_student_num and is_full == False:
+                new_values = {'$set': { '수강신청인원': updated_nums[nums_id], 'isFull': True }}
+
+            else:
+                new_values = {'$set': { '수강신청인원': updated_nums[nums_id] } }
+                
+            # Update database
             try:
                 self.db.lectures.update_one(query, new_values)
             except IndexError:
@@ -160,8 +217,6 @@ class SnuScraper(object):
             print('Running...')
             self.update_db
             time.sleep(self._time_interval * 60)
-
-            
 
 
 def init_scraper(scraper_app, time_interval):

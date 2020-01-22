@@ -28,3 +28,9 @@ Params.txt
 
 # temp.py
 temp.py
+
+# firebase
+firebase/
+
+# test-output
+test_output/
