@@ -21,7 +21,7 @@ class SnuScraper(object):
         self._site_url = config['SITE_URL']
         self._excel_url = config['EXCEL_URL']
         self._params = copy(config['PARAMS'])
-        self._time_interval = 7
+        self._time_interval = 3
         self.year = year
         self.id = id
         self.season = season
@@ -44,10 +44,10 @@ class SnuScraper(object):
         and update the db after every specified time interval passes. 
         '''
         
-        if 1 <= time_interval <=20:
+        if 0 <= time_interval <=20:
             self._time_interval = time_interval
         else:
-            raise ValueError('Parameter \'time_interval\' of function \'set_time_interval\' must be between a value of 1 and 20')
+            raise ValueError('Parameter \'time_interval\' of function \'set_time_interval\' must be between a value of 0 and 20')
     
     def get_spread_sheet(self):
         '''
@@ -67,6 +67,9 @@ class SnuScraper(object):
         '''
         Save response content(excel file) as given filename
         '''
+
+        if self.debug == True:
+            print(f'Saving spreadsheet: {filename}')
 
         with open(join('xls', filename), 'wb') as output_file:
             output_file.write(self.get_spread_sheet())
@@ -92,6 +95,7 @@ class SnuScraper(object):
             for column in columns:
                 lecture[column] = row[column]
             lecture['isFull'] = int(lecture['정원'].split(' ')[0]) <= int(lecture['수강신청인원'])
+            lecture['users'] = []
             lectures.append(lecture)
 
         return lectures
@@ -103,11 +107,28 @@ class SnuScraper(object):
         lectures = self.get_lecture_list(df)
         for lecture in lectures:
             self.db.lectures.insert_one(lecture)
+
+    def update_df_to_db(self, df):
+
+        lectures = self.get_lecture_list(df)
+
+        for lecture in lectures:
+            lecture_code = lecture['교과목번호']
+            lecture_number = lecture['강좌번호']
+
+
+            # Error
+            if self.db.lectures.find({ '교과목번호': lecture_code, '강좌번호': lecture_number }) == None:
+                self.db.lectures.insert_one(lecture)
+
            
     def get_page_student_data(self, page_num):
         '''
-        Return list of number of students for each course on the page
+        Return dict of number of students for each course on the page
         '''
+
+        if self.debug == True:
+            print(f'Scraping page #{page_num}')
 
         params = copy(self._params)
 
@@ -126,7 +147,7 @@ class SnuScraper(object):
             if i % 15 == 14:
                 lecture_data = {
                     '교과목번호': data[i - 7].getText(),
-                    '강좌번호': int(data[i - 6].getText()),
+                    '강좌번호': data[i - 6].getText(),
                     '수강신청인원': int(data[i].getText())
                 }
                 find_data.append(lecture_data)
@@ -135,6 +156,10 @@ class SnuScraper(object):
 
 
     def get_student_data(self):
+        '''
+        Get data for all students on all pages
+        '''
+        
         updated_student_data = []
 
         for i in range(1, self.max_page_num + 1):
@@ -152,6 +177,10 @@ class SnuScraper(object):
         
         if self.debug == True and debug_data != None:
             updated_nums = debug_data
+            print('updating database with scraped data')
+        elif self.debug == True and debug_data == None:
+            updated_nums = self.get_student_data()
+            print('updating database with scraped data')
         else:
             updated_nums = self.get_student_data()
 
@@ -162,8 +191,7 @@ class SnuScraper(object):
             lecture = self.db.lectures.find_one({ '교과목번호': data['교과목번호'], '강좌번호': data['강좌번호'] })
 
             if lecture == None:
-                print(data)
-                return
+                continue
 
             id = lecture['_id']
             max_student_num = int(lecture['정원'].split(' ')[0])
@@ -207,10 +235,29 @@ class SnuScraper(object):
         Send a request to the server and update database
         every 'time_interval' minutes 
         '''
+
+        counter = 0
+        
+        xls_filename = f'{self.year}-{self.season}.xls'
+        debug_xls_filename = f'{self.year}-{self.season}-debug.xls'
+
         while True:
-            print('Running...')
-            self.update_db
+            if counter % 7 == 0:
+                self.save_spread_sheet(xls_filename)
+                
+                if self.debug == True:
+                    df = self.load_spread_sheet(debug_xls_filename)
+                else:
+                    df = self.load_spread_sheet(xls_filename)
+
+                self.update_df_to_db(df)
+            
+            print('Scraping...')
+            self.update_db()
+            print(f'Sleeping for {self._time_interval} minutes')
             time.sleep(self._time_interval * 60)
+
+            counter += 1
 
 
 def init_scraper(scraper_app, time_interval):
