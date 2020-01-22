@@ -109,16 +109,24 @@ class SnuScraper(object):
             self.db.lectures.insert_one(lecture)
 
     def update_df_to_db(self, df):
+        '''
+        Add new lecture to the database
+        '''
 
         lectures = self.get_lecture_list(df)
 
         for lecture in lectures:
             lecture_code = lecture['교과목번호']
-            lecture_number = lecture['강좌번호']
+            lecture_number = int(lecture['강좌번호'])
 
+            lecture_cursor = self.db.lectures.find_one({
+                '$and': [
+                    { '교과목번호': lecture_code },
+                    { '강좌번호': int(lecture_number) }
+                ]
+            })
 
-            # Error
-            if self.db.lectures.find({ '교과목번호': lecture_code, '강좌번호': lecture_number }) == None:
+            if lecture_cursor == None:
                 self.db.lectures.insert_one(lecture)
 
            
@@ -147,7 +155,7 @@ class SnuScraper(object):
             if i % 15 == 14:
                 lecture_data = {
                     '교과목번호': data[i - 7].getText(),
-                    '강좌번호': data[i - 6].getText(),
+                    '강좌번호': int(data[i - 6].getText()),
                     '수강신청인원': int(data[i].getText())
                 }
                 find_data.append(lecture_data)
@@ -188,11 +196,18 @@ class SnuScraper(object):
         
         for data in updated_nums_data:
             updated_num = data['수강신청인원']
-            lecture = self.db.lectures.find_one({ '교과목번호': data['교과목번호'], '강좌번호': data['강좌번호'] })
 
+            lecture = self.db.lectures.find_one({
+                '$and': [
+                    { '교과목번호': data['교과목번호'] },
+                    { '강좌번호': int(data['강좌번호']) }
+                ]
+            })
+
+            # When there is a new lecture that doesn't exist in the database
             if lecture == None:
                 continue
-
+            
             id = lecture['_id']
             max_student_num = int(lecture['정원'].split(' ')[0])
             is_full = lecture['isFull']
