@@ -82,7 +82,7 @@ class SnuScraper(object):
         Save response content(excel file) as given filename
         '''
 
-        self.log_message(f'Saving spreadsheet: {filename}', 'info')
+        self.log_message(f'Saving spreadsheet to local machine: {filename}', 'info')
 
         with open(join('xls', filename), 'wb') as output_file:
             if self.get_spread_sheet() != None:
@@ -118,6 +118,8 @@ class SnuScraper(object):
         '''
         Save data in dataframe to database
         '''
+        self.log_message('Saving spreadsheet to database(INITIALIZING DATABASE)', 'info')
+        
         lectures = self.get_lecture_list(df)
         for lecture in lectures:
             self.db.lectures.insert_one(lecture)
@@ -126,6 +128,8 @@ class SnuScraper(object):
         '''
         Add new lecture to the database
         '''
+
+        self.log_message('Updating spreadsheet to database', 'info')
 
         lectures = self.get_lecture_list(df)
 
@@ -192,6 +196,24 @@ class SnuScraper(object):
 
         return updated_student_data
     
+    def send_messages(self, lecture):
+        users = lecture['users']
+        lecture_title = lecture['교과목명']
+        user_counter = 0
+        
+        # Send FCM messages
+        for user in users:
+            user_token = user
+            message = messaging.Message(
+                notification = messaging.Notification(
+                    title= '수강신청 빈자리 알림',
+                    body= f'강좌 {lecture_title}에 빈자리가 생겼습니다.'
+                ),
+                token = str(user_token)
+            )
+            response = messaging.send(message)
+            user_counter += 1
+        self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
     def update_db(self, debug_data = None):
         '''
@@ -226,34 +248,16 @@ class SnuScraper(object):
             id = lecture['_id']
             max_student_num = int(lecture['정원'].split(' ')[0])
             is_full = lecture['isFull']
-            title = lecture['교과목명']
 
             query = { '_id': ObjectId(id) }
 
             if updated_num < max_student_num and is_full == True:
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
-
-                users = lecture['users']
-                user_counter = 0
-                
-                # Send FCM messages
-                for user in users:
-                    user_token = user
-                    message = messaging.Message(
-                        notification = messaging.Notification(
-                            title= '수강신청 빈자리 알림',
-                            body= f'강좌 {title}에 빈자리가 생겼습니다.'
-                        ),
-                        token = str(user_token)
-                    )
-                    response = messaging.send(message)
-                    user_counter += 1
-
-                self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')                    
-
+                self.send_messages(lecture)                    
+            
             elif updated_num >= max_student_num and is_full == False:
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
-
+            
             else:
                 new_values = {'$set': { '수강신청인원': updated_num } }
 
@@ -273,6 +277,8 @@ class SnuScraper(object):
         
         xls_filename = f'{self.year}-{self.season}.xls'
         debug_xls_filename = f'{self.year}-{self.season}-debug.xls'
+
+        self.log_message('##################### STARTING APP #####################', 'info')
 
         while True:
             if counter % 7 == 0:

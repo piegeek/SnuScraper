@@ -5,6 +5,7 @@ create database and collection
 
 change config files accordingly
 
-initialize function call
+change 'run.py' file accordingly
 
-run function call
+if database is not initialized: run 'python run.py --init'
+else: run 'python run.py'
