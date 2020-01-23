@@ -38,5 +38,5 @@ firebase/
 # test-output
 test_output/
 
-# log
-log/
+# Log files
+*.log
