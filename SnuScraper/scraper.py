@@ -3,19 +3,12 @@ import json
 import time
 import pandas as pd
 import firebase_admin
-# import logging
 from firebase_admin import messaging
 from os.path import join
 from copy import copy
 from bson.objectid import ObjectId
 from bs4 import BeautifulSoup
 from SnuScraper import config, logger
-
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format='%(asctime)s %(levelname)s %(message)s',
-#     filename=join(config['LOG_FILE_PATH'], 'snuscraper.log'
-# )
 
 class SnuScraper(object):
 
@@ -77,9 +70,12 @@ class SnuScraper(object):
         params['srchCond'] = '1'
         params['workType'] = 'EX'
 
-        res = requests.post(self._excel_url, params)
-
-        return res.content
+        try:
+            res = requests.post(self._excel_url, params, timeout=10)
+            return res.content
+        except requests.exceptions.RequestException as RequestException:
+            self.log_message(RequestException, 'error')
+            return None
 
     def save_spread_sheet(self, filename):
         '''
@@ -89,7 +85,8 @@ class SnuScraper(object):
         self.log_message(f'Saving spreadsheet: {filename}', 'info')
 
         with open(join('xls', filename), 'wb') as output_file:
-            output_file.write(self.get_spread_sheet())
+            if self.get_spread_sheet() != None:
+                output_file.write(self.get_spread_sheet())
 
     def load_spread_sheet(self, filename):
         '''
@@ -161,7 +158,7 @@ class SnuScraper(object):
         find_data = []
 
         try:
-            res = requests.post(self._site_url, params)
+            res = requests.post(self._site_url, params, timeout=10)
         except requests.exceptions.RequestException as RequestException:
             self.log_message(RequestException, 'error')
             return find_data
