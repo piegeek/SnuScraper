@@ -5,7 +5,7 @@ import json
 import time
 
 db = client.SSLT2019WINTER
-app = SnuScraper('2019', '겨울학기', 'U000200002U000300002', 25, db, debug=True)
+app = SnuScraper('2019', '겨울학기', 'U000200002U000300002', 25, db, debug=False)
 
-init_scraper(app, 0.1)
+# init_scraper(app, 0.1)
 app.run()

@@ -3,12 +3,19 @@ import json
 import time
 import pandas as pd
 import firebase_admin
+# import logging
 from firebase_admin import messaging
 from os.path import join
 from copy import copy
 from bson.objectid import ObjectId
 from bs4 import BeautifulSoup
-from SnuScraper import config
+from SnuScraper import config, logger
+
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format='%(asctime)s %(levelname)s %(message)s',
+#     filename=join(config['LOG_FILE_PATH'], 'snuscraper.log'
+# )
 
 class SnuScraper(object):
 
@@ -29,8 +36,19 @@ class SnuScraper(object):
         self.db = db
         self.admin = firebase_admin.initialize_app()
         self.debug = debug
+        self.logger = logger
 
         self.set_params()
+
+    def log_message(self, msg, log_level):
+        if self.debug == True:
+            print(msg)
+        elif self.debug != True and log_level == 'info':
+            self.logger.info(msg)
+        elif self.debug != True and log_level == 'error':
+            self.logger.info(msg)
+        elif self.debug != True and log_level == 'warning':
+            self.logger.warning(msg)
 
     def set_params(self):
         self._params['srchOpenSchyy'] = self.year
@@ -68,8 +86,7 @@ class SnuScraper(object):
         Save response content(excel file) as given filename
         '''
 
-        if self.debug == True:
-            print(f'Saving spreadsheet: {filename}')
+        self.log_message(f'Saving spreadsheet: {filename}', 'info')
 
         with open(join('xls', filename), 'wb') as output_file:
             output_file.write(self.get_spread_sheet())
@@ -134,10 +151,7 @@ class SnuScraper(object):
         '''
         Return dict of number of students for each course on the page
         '''
-
-        if self.debug == True:
-            print(f'Scraping page #{page_num}')
-
+        
         params = copy(self._params)
 
         params['srchCond'] = '1'
@@ -149,7 +163,7 @@ class SnuScraper(object):
         try:
             res = requests.post(self._site_url, params)
         except requests.exceptions.RequestException as RequestException:
-            print(RequestException)
+            self.log_message(RequestException, 'error')
             return find_data
 
         soup = BeautifulSoup(res.content, 'html.parser')
@@ -189,12 +203,12 @@ class SnuScraper(object):
         
         if self.debug == True and debug_data != None:
             updated_nums = debug_data
-            print('updating database with scraped data')
         elif self.debug == True and debug_data == None:
             updated_nums = self.get_student_data()
-            print('updating database with scraped data')
         else:
             updated_nums = self.get_student_data()
+
+        self.log_message('updating database with scraped data', 'info')
 
         updated_nums_data = updated_nums
         
@@ -223,7 +237,8 @@ class SnuScraper(object):
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
 
                 users = lecture['users']
-
+                user_counter = 0
+                
                 # Send FCM messages
                 for user in users:
                     user_token = user
@@ -235,7 +250,9 @@ class SnuScraper(object):
                         token = str(user_token)
                     )
                     response = messaging.send(message)
-                    print(f'Successfully sent message: {response}')
+                    user_counter += 1
+
+                self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')                    
 
             elif updated_num >= max_student_num and is_full == False:
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
@@ -271,9 +288,9 @@ class SnuScraper(object):
 
                 self.update_df_to_db(df)
             
-            print('Scraping...')
+            self.log_message('Scraping...', 'info')            
             self.update_db()
-            print(f'Sleeping for {self._time_interval} minutes')
+            self.log_message(f'Sleeping for {self._time_interval} minutes', 'info')            
             time.sleep(self._time_interval * 60)
 
             counter += 1
