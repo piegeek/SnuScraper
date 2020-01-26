@@ -5,7 +5,7 @@ import pandas as pd
 import firebase_admin
 from firebase_admin import messaging
 from os.path import join
-from copy import copy
+from copy import copy, deepcopy
 from bson.objectid import ObjectId
 from bs4 import BeautifulSoup
 from SnuScraper import config, logger
@@ -65,7 +65,7 @@ class SnuScraper(object):
         Make a post request to the server with adequate parameters 
         then save retrieved data to an excel file
         '''    
-        params = copy(self._params)
+        params = deepcopy(self._params)
 
         params['srchCond'] = '1'
         params['workType'] = 'EX'
@@ -153,7 +153,7 @@ class SnuScraper(object):
         Return dict of number of students for each course on the page
         '''
         
-        params = copy(self._params)
+        params = deepcopy(self._params)
 
         params['srchCond'] = '1'
         params['pageNo'] = str(page_num)
