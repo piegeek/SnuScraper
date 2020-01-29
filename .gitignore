@@ -16,15 +16,8 @@ instance/
 # pyc files
 *.pyc
 
-# Params.txt
-Params.txt
-
 # Excel files
 *.xls
-
-# Config files
-*.config
-*.cfg
 
 # temp.py
 temp.py
