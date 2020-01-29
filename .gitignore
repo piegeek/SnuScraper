@@ -36,3 +36,6 @@ test_output/
 
 # config files
 *.cfg
+
+# run.py
+run.py
