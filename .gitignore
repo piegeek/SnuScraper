@@ -33,3 +33,6 @@ test_output/
 
 # Log files
 *.log
+
+# config files
+*.cfg
