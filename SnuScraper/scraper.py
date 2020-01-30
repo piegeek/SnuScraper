@@ -155,7 +155,7 @@ class SnuScraper(object):
         
         params = deepcopy(self._params)
 
-        params['srchCond'] = '1'
+        params['srchCond'] = '0'
         params['pageNo'] = str(page_num)
         params['workType'] = 'S'
         
