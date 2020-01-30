@@ -211,8 +211,11 @@ class SnuScraper(object):
                 ),
                 token = str(user_token)
             )
-            response = messaging.send(message)
-            user_counter += 1
+            try:
+                response = messaging.send(message)
+                user_counter += 1
+            except Exception:
+                continue 
         self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
     def update_db(self, debug_data = None):
