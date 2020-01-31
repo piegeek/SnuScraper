@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import threading
 import pandas as pd
 import firebase_admin
 from firebase_admin import messaging
@@ -256,7 +257,9 @@ class SnuScraper(object):
 
             if updated_num < max_student_num and is_full == True:
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
-                self.send_messages(lecture)                    
+                
+                messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
+                messaging_thread.start()               
             
             elif updated_num >= max_student_num and is_full == False:
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
