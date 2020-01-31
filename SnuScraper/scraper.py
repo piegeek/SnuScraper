@@ -182,7 +182,11 @@ class SnuScraper(object):
         
         return find_data 
 
-
+    def get_page_student_data_async(self, list_to_save, page_num):
+        results = self.get_page_student_data(page_num)
+        for result in results:
+            list_to_save.append(result)
+    
     def get_student_data(self):
         '''
         Get data for all students on all pages
@@ -282,19 +286,13 @@ class SnuScraper(object):
         counter = 0
         
         xls_filename = f'{self.year}-{self.season}.xls'
-        debug_xls_filename = f'{self.year}-{self.season}-debug.xls'
 
         self.log_message('##################### STARTING APP #####################', 'info')
 
         while True:
             if counter % 7 == 0:
                 self.save_spread_sheet(xls_filename)
-                
-                if self.debug == True:
-                    df = self.load_spread_sheet(debug_xls_filename)
-                else:
-                    df = self.load_spread_sheet(xls_filename)
-
+                df = self.load_spread_sheet(xls_filename)
                 self.update_df_to_db(df)
             
             self.log_message('Scraping...', 'info')            
