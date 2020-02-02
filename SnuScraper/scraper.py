@@ -220,6 +220,7 @@ class SnuScraper(object):
                 response = messaging.send(message)
                 user_counter += 1
             except Exception:
+                self.log_message(f'ERROR while sending messages: {Exception}')
                 continue 
         self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
