@@ -344,6 +344,7 @@ def init_scraper_for_new_students(scraper_app):
         current_number = lecture['수강신청인원']
         
         # Match for lectures that have a limit on how many old students can register
+        # Match for +, - signs as implemented above
         if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']) and lecture['isFull'] == True:
             # TODO: Implement with regex later
             if int(lecture['정원'].split(' ')[0]) == int(lecture['정원'].split(' ')[-1][1:-1]):
