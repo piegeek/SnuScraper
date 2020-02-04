@@ -7,5 +7,17 @@ change config files accordingly
 
 change 'run.py' file accordingly
 
-if database is not initialized: run 'python run.py --init'
-else: run 'python run.py'
+1. if current students get to register first:
+  (1) add "old_students=True" parameter to app initializer
+  (2) 'python run.py --init' <====== ONLY ONCE
+  (3) 'python run.py'
+
+   when it is time for new students to enroll:
+  (1) set "old_students=False"
+  (2) 'python run.py --init-new-students' <====== ONLY ONCE
+  (3) 'python run.py'
+
+2. if students register all at once:
+  (1) set "old_students=False"
+  (2) 'python run.py --init' <====== ONLY ONCE
+  (3) 'python run.py'
