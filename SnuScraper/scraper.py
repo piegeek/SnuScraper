@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import re
 import threading
 import pandas as pd
 import firebase_admin
@@ -13,7 +14,7 @@ from SnuScraper import config, logger
 
 class SnuScraper(object):
 
-    def __init__(self, year, season, id, max_page_num, db, debug=False):
+    def __init__(self, year, season, id, max_page_num, db, old_students=True, debug=False):
         '''
         site_url: URL of server
         params: Parameters for a post request
@@ -29,6 +30,7 @@ class SnuScraper(object):
         self.max_page_num = max_page_num
         self.db = db
         self.admin = firebase_admin.initialize_app()
+        self.old_students = old_students
         self.debug = debug
         self.logger = logger
 
@@ -319,3 +321,20 @@ def init_scraper(scraper_app, time_interval):
             ERROR! Parameters for 'init_scraper' must be over 2018 and one of choices: '1학기', '여름학기', '2학기', '겨울학기'
             '''
         )
+
+def init_scraper_for_new_students(scraper_app):
+    all_lectures = scraper_app.db.lectures.find({})
+
+    for lecture in all_lectures:
+        current_number = lecture['수강신청인원']
+        
+        # Match for lectures that have a limit on how many old students can register
+        if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']) and lecture['isFull'] == True:
+            # TODO: Implement with regex later
+            if int(lecture['정원'].split(' ')[0]) == int(lecture['정원'].split(' ')[-1][1:-1]):
+                continue
+            else:
+                scraper_app.db.lectures.update_one(
+                    { '_id': lecture['_id'] },
+                    { '$set': { 'isFull': False } }
+                )
