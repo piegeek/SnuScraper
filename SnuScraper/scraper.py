@@ -14,7 +14,7 @@ from SnuScraper import config, logger
 
 class SnuScraper(object):
 
-    def __init__(self, year, season, id, max_page_num, db, old_students=True, debug=False):
+    def __init__(self, year, season, id, max_page_num, db, old_students=False, debug=False):
         '''
         site_url: URL of server
         params: Parameters for a post request
@@ -111,7 +111,14 @@ class SnuScraper(object):
             lecture = {}
             for column in columns:
                 lecture[column] = row[column]
-            lecture['isFull'] = int(lecture['정원'].split(' ')[0]) <= int(lecture['수강신청인원'])
+            if self.old_students == True:
+                if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']):
+                    # TODO: Use regex later
+                    lecture['isFull'] = int(lecture['정원'].split(' ')[-1][1:-1]) <= int(lecture['수강신청인원'])
+                else:
+                    lecture['isFull'] = int(lecture['정원']) <= int(lecture['수강신청인원'])
+            else:
+                lecture['isFull'] = int(lecture['정원'].split(' ')[0]) <= int(lecture['수강신청인원'])
             lecture['users'] = []
             lectures.append(lecture)
 
@@ -257,7 +264,15 @@ class SnuScraper(object):
                 continue
             
             id = lecture['_id']
-            max_student_num = int(lecture['정원'].split(' ')[0])
+
+            if self.old_students == True:
+                if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']):
+                    max_student_num = int(lecture['정원'].split(' ')[-1][1:-1])
+                else:
+                    max_student_num = int(lecture['정원'])
+            else:
+                max_student_num = int(lecture['정원'].split(' ')[0])
+            
             is_full = lecture['isFull']
 
             query = { '_id': ObjectId(id) }
