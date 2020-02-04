@@ -112,7 +112,7 @@ class SnuScraper(object):
             for column in columns:
                 lecture[column] = row[column]
             if self.old_students == True:
-                if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']):
+                if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', lecture['정원']):
                     # TODO: Use regex later
                     lecture['isFull'] = int(lecture['정원'].split(' ')[-1][1:-1]) <= int(lecture['수강신청인원'])
                 else:
@@ -266,7 +266,7 @@ class SnuScraper(object):
             id = lecture['_id']
 
             if self.old_students == True:
-                if re.search(r'(\s*)(\d+)(\s*)(\((\s*)(\d+)(\s*)\))(\s*)', lecture['정원']):
+                if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', lecture['정원']):
                     max_student_num = int(lecture['정원'].split(' ')[-1][1:-1])
                 else:
                     max_student_num = int(lecture['정원'])
