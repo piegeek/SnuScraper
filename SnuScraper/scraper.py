@@ -278,18 +278,18 @@ class SnuScraper(object):
             query = { '_id': ObjectId(id) }
 
             if updated_num < max_student_num and is_full == True:
-                self.log_message(f'1, title: {lecture['교과목명']}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+                self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
                 
                 messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
                 messaging_thread.start()               
             
             elif updated_num >= max_student_num and is_full == False:
-               self.log_message(f'2, title: {lecture['교과목명']}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+               self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
             
             else:
-                self.log_message(f'3, title: {lecture['교과목명']}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+                self.log_message(f'3, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num } }
 
             # Update database
