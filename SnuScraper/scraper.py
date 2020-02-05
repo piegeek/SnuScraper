@@ -211,6 +211,7 @@ class SnuScraper(object):
         return updated_student_data
     
     def send_messages(self, lecture):
+        self.log_message('Sending messages', 'info')
         users = lecture['users']
         lecture_title = lecture['교과목명']
         user_counter = 0
@@ -248,7 +249,8 @@ class SnuScraper(object):
         self.log_message('updating database with scraped data', 'info')
 
         updated_nums_data = updated_nums
-        
+        messaging_threads = []
+
         for data in updated_nums_data:
             updated_num = data['수강신청인원']
 
@@ -274,7 +276,6 @@ class SnuScraper(object):
                 max_student_num = int(lecture['정원'].split(' ')[0])
             
             is_full = lecture['isFull']
-
             query = { '_id': ObjectId(id) }
 
             if updated_num < max_student_num and is_full == True:
@@ -282,6 +283,7 @@ class SnuScraper(object):
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
                 
                 messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
+                messaging_threads.append(messaging_thread)
                 messaging_thread.start()               
             
             elif updated_num >= max_student_num and is_full == False:
@@ -289,7 +291,7 @@ class SnuScraper(object):
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
             
             else:
-                self.log_message(f'3, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+                # self.log_message(f'3, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num } }
 
             # Update database
@@ -297,6 +299,10 @@ class SnuScraper(object):
                 self.db.lectures.update_one(query, new_values)
             except ValueError:
                 continue
+
+        for thread in messaging_threads:
+            if thread:
+                thread.join()
 
     def run(self):
         '''
