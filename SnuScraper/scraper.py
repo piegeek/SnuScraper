@@ -282,9 +282,10 @@ class SnuScraper(object):
                 self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
                 
-                messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
-                messaging_threads.append(messaging_thread)
-                messaging_thread.start()               
+                # messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
+                # messaging_threads.append(messaging_thread)
+                # messaging_thread.start()     
+                self.send_messages(lecture)          
             
             elif updated_num >= max_student_num and is_full == False:
                self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
@@ -300,9 +301,9 @@ class SnuScraper(object):
             except ValueError:
                 continue
 
-        for thread in messaging_threads:
-            if thread:
-                thread.join()
+        # for thread in messaging_threads:
+        #     if thread:
+        #         thread.join()
 
     def run(self):
         '''
