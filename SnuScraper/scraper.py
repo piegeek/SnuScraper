@@ -225,28 +225,19 @@ class SnuScraper(object):
                     body= f'강좌 {lecture_title}에 빈자리가 생겼습니다.'
                 ),
                 token = str(user_token),
-                # apns={
-                #     headers: {
-                #         'apns-priority': '10',
-                #     },
-                #     payload: {
-                #         aps: {
-                #             sound: 'default',
-                #         }
-                #     },
-                # },
-                # android= {
-                #     priority: 'high',
-                #     notification: {
-                #         sound: 'default',
-                #     }
-                # },
+                android = messaging.AndroidConfig(
++                    priority = 'high',
++                    notification = messaging.AndroidNotification(sound='default')
++                ),
++                apns = messaging.APNSConfig(
++                    payload = messaging.APNSPayload(aps=messaging.Aps(sound='default'))
++                )
             )
             try:
                 response = messaging.send(message)
                 user_counter += 1
-            except Exception:
-                self.log_message(f'ERROR while sending messages: {Exception}', 'error')
+            except Exception as e:
++               self.log_message(f'ERROR while sending messages: {str(e)}', 'error')
                 continue 
         self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
