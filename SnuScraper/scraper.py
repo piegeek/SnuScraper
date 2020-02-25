@@ -226,18 +226,18 @@ class SnuScraper(object):
                 ),
                 token = str(user_token),
                 android = messaging.AndroidConfig(
-+                    priority = 'high',
-+                    notification = messaging.AndroidNotification(sound='default')
-+                ),
-+                apns = messaging.APNSConfig(
-+                    payload = messaging.APNSPayload(aps=messaging.Aps(sound='default'))
-+                )
+                    priority = 'high',
+                    notification = messaging.AndroidNotification(sound='default')
+                ),
+                apns = messaging.APNSConfig(
+                    payload = messaging.APNSPayload(aps=messaging.Aps(sound='default'))
+                )
             )
             try:
                 response = messaging.send(message)
                 user_counter += 1
             except Exception as e:
-+               self.log_message(f'ERROR while sending messages: {str(e)}', 'error')
+                self.log_message(f'ERROR while sending messages: {str(e)}', 'error')
                 continue 
         self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
