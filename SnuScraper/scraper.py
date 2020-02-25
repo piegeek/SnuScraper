@@ -225,22 +225,22 @@ class SnuScraper(object):
                     body= f'강좌 {lecture_title}에 빈자리가 생겼습니다.'
                 ),
                 token = str(user_token),
-                apns={
-                    headers: {
-                        'apns-priority': '10',
-                    },
-                    payload: {
-                        aps: {
-                            sound: 'default',
-                        }
-                    },
-                },
-                android= {
-                    priority: 'high',
-                    notification: {
-                        sound: 'default',
-                    }
-                },
+                # apns={
+                #     headers: {
+                #         'apns-priority': '10',
+                #     },
+                #     payload: {
+                #         aps: {
+                #             sound: 'default',
+                #         }
+                #     },
+                # },
+                # android= {
+                #     priority: 'high',
+                #     notification: {
+                #         sound: 'default',
+                #     }
+                # },
             )
             try:
                 response = messaging.send(message)
