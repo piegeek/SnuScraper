@@ -222,7 +222,8 @@ class SnuScraper(object):
             message = messaging.Message(
                 notification = messaging.Notification(
                     title= '수강신청 빈자리 알림',
-                    body= f'강좌 {lecture_title}에 빈자리가 생겼습니다.'
+                    body= f'강좌 {lecture_title}에 빈자리가 생겼습니다.',
+                    sound='default'
                 ),
                 token = str(user_token)
             )
