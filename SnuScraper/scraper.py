@@ -304,21 +304,20 @@ class SnuScraper(object):
                 print(f'BEFORE: {max_student_num}')
                 print(f'AFTER: {updated_max_num}')
 
-
             is_full = lecture['isFull']
             query = { '_id': ObjectId(id) }
 
-            if updated_num < max_student_num and is_full == True:
-                self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+            if updated_num < updated_max_student_num and is_full == True:
+                self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {updated_max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False, '정원': updated_max_num }}
                 
-                messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
-                messaging_threads.append(messaging_thread)
-                messaging_thread.start()     
+                # messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
+                # messaging_threads.append(messaging_thread)
+                # messaging_thread.start()     
                 # self.send_messages(lecture)          
             
-            elif updated_num >= max_student_num and is_full == False:
-               self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
+            elif updated_num >= updated_max_student_num and is_full == False:
+               self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {updated_max_student_num}', 'info')
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True, '정원': updated_max_num }}
             
             else:
