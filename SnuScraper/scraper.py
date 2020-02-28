@@ -285,8 +285,10 @@ class SnuScraper(object):
                 max_student_num = int(lecture['정원'].split(' ')[0])
 
             # DELETE LATER (ONLY FOR TESTING PURPOSES)
-            if updated_max_num != max_student_num:
-                print(f'LECTURE NAME: {lecture['교과목명']}, LECTURE NUMBER: {lecture['강좌번호']} BEFORE: {max_student_num}, AFTER: {updated_max_num}')
+            if updated_max_num != max_student_num:
+                print(f'LECTURE NUMBER: {lecture['강좌번호']}')
+                print(f'BEFORE: {max_student_num}')
+                print(f'AFTER: {updated_max_num}')
 
 
             is_full = lecture['isFull']
