@@ -185,6 +185,7 @@ class SnuScraper(object):
                 lecture_data = {
                     '교과목번호': data[i - 7].getText(),
                     '강좌번호': int(data[i - 6].getText()),
+                    '정원': data[i - 1].getText(),
                     '수강신청인원': int(data[i].getText())
                 }
                 find_data.append(lecture_data)
@@ -259,6 +260,7 @@ class SnuScraper(object):
         messaging_threads = []
 
         for data in updated_nums_data:
+            updated_max_num = data['정원']
             updated_num = data['수강신청인원']
 
             lecture = self.db.lectures.find_one({
@@ -281,13 +283,18 @@ class SnuScraper(object):
                     max_student_num = int(lecture['정원'])
             else:
                 max_student_num = int(lecture['정원'].split(' ')[0])
-            
+
+            # DELETE LATER (ONLY FOR TESTING PURPOSES)
+            if updated_max_num != max_student_num:
+                print(f'LECTURE NAME: {lecture['교과목명']}, LECTURE NUMBER: {lecture['강좌번호']} BEFORE: {max_student_num}, AFTER: {updated_max_num}')
+
+
             is_full = lecture['isFull']
             query = { '_id': ObjectId(id) }
 
             if updated_num < max_student_num and is_full == True:
                 self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
-                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False }}
+                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False, '정원': updated_max_num }}
                 
                 messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
                 messaging_threads.append(messaging_thread)
@@ -296,11 +303,11 @@ class SnuScraper(object):
             
             elif updated_num >= max_student_num and is_full == False:
                self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
-               new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True }}
+               new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True, '정원': updated_max_num }}
             
             else:
                 # self.log_message(f'3, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
-                new_values = {'$set': { '수강신청인원': updated_num } }
+                new_values = {'$set': { '수강신청인원': updated_num, '정원': updated_max_num } }
 
             # Update database
             try:
