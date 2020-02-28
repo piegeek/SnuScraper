@@ -242,6 +242,17 @@ class SnuScraper(object):
                 continue 
         self.log_message(f'Successfully sent messages to {user_counter} users.', 'info')
     
+    def extract_max_student_number(self, max_student_data):
+        if self.old_students == True:
+            if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', max_student_data):
+                max_student_num = int(max_student_data.split(' ')[-1][1:-1])
+            else:
+                max_student_num = int(max_student_data)
+        else:
+            max_student_num = int(max_student_data.split(' ')[0])
+
+        return max_student_num
+    
     def update_db(self, debug_data = None):
         '''
         Update student number for each lecture in the database
@@ -276,17 +287,20 @@ class SnuScraper(object):
             
             id = lecture['_id']
 
-            if self.old_students == True:
-                if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', lecture['정원']):
-                    max_student_num = int(lecture['정원'].split(' ')[-1][1:-1])
-                else:
-                    max_student_num = int(lecture['정원'])
-            else:
-                max_student_num = int(lecture['정원'].split(' ')[0])
+            # if self.old_students == True:
+            #     if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', lecture['정원']):
+            #         max_student_num = int(lecture['정원'].split(' ')[-1][1:-1])
+            #     else:
+            #         max_student_num = int(lecture['정원'])
+            # else:
+            #     max_student_num = int(lecture['정원'].split(' ')[0])
+
+            max_student_num = self.extract_max_student_number(lecture['정원'])
+            updated_max_student_num = self.extract_max_student_number(updated_max_num)
 
             # DELETE LATER (ONLY FOR TESTING PURPOSES)
-            if updated_max_num != max_student_num:
-                print(f'LECTURE NUMBER: {lecture['강좌번호']}')
+            if updated_max_student_num != max_student_num:
+                print(f'LECTURE NUMBER: {lecture["강좌번호"]}')
                 print(f'BEFORE: {max_student_num}')
                 print(f'AFTER: {updated_max_num}')
 
