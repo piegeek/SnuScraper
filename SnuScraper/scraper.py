@@ -287,22 +287,15 @@ class SnuScraper(object):
             
             id = lecture['_id']
 
-            # if self.old_students == True:
-            #     if re.search(r'(\s*)(.?\d+)(\s*)(\((\s*)(.?\d+)(\s*)\))(\s*)', lecture['정원']):
-            #         max_student_num = int(lecture['정원'].split(' ')[-1][1:-1])
-            #     else:
-            #         max_student_num = int(lecture['정원'])
-            # else:
-            #     max_student_num = int(lecture['정원'].split(' ')[0])
-
             max_student_num = self.extract_max_student_number(lecture['정원'])
             updated_max_student_num = self.extract_max_student_number(updated_max_num)
 
             # DELETE LATER (ONLY FOR TESTING PURPOSES)
-            if updated_max_student_num != max_student_num:
-                print(f'LECTURE NUMBER: {lecture["강좌번호"]}')
-                print(f'BEFORE: {max_student_num}')
-                print(f'AFTER: {updated_max_num}')
+            # if updated_max_student_num != max_student_num:
+            #     print(f'LECTURE NAME: {lecture["교과목명"]}')
+            #     print(f'LECTURE NUMBER: {lecture["강좌번호"]}')
+            #     print(f'BEFORE: {max_student_num}')
+            #     print(f'AFTER: {updated_max_num}')
 
             is_full = lecture['isFull']
             query = { '_id': ObjectId(id) }
@@ -311,9 +304,9 @@ class SnuScraper(object):
                 self.log_message(f'1, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {updated_max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num, 'isFull': False, '정원': updated_max_num }}
                 
-                # messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
-                # messaging_threads.append(messaging_thread)
-                # messaging_thread.start()     
+                messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
+                messaging_threads.append(messaging_thread)
+                messaging_thread.start()     
                 # self.send_messages(lecture)          
             
             elif updated_num >= updated_max_student_num and is_full == False:
