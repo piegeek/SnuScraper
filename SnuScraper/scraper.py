@@ -210,6 +210,29 @@ class SnuScraper(object):
                 updated_student_data.append(data)
 
         return updated_student_data
+
+    def get_student_data_async(self):
+        threads = []
+        updated_student_data = []
+
+        for i in range(1, self.max_page_num + 1):
+            # LIMIT THE NUMBER OF CONCURRENT REQUESTS TO 5
+            if len(threads) >= 5:
+                for thread in threads:
+                    thread.join()
+                threads.clear()
+            
+            get_data_thread = threading.Thread(target=self.get_page_student_data_async, args=(updated_student_data, i))
+            get_data_thread.start()
+            threads.append(get_data_thread)
+
+            # CLEAN UP LEFTOVER THREADS
+            if i == self.max_page_num:
+                for thread in threads:
+                    thread.join()
+                threads.clear()
+
+        return updated_student_data
     
     def send_messages(self, lecture):
         self.log_message('Sending messages', 'info')
@@ -261,9 +284,9 @@ class SnuScraper(object):
         if self.debug == True and debug_data != None:
             updated_nums = debug_data
         elif self.debug == True and debug_data == None:
-            updated_nums = self.get_student_data()
+            updated_nums = self.get_student_data_async()
         else:
-            updated_nums = self.get_student_data()
+            updated_nums = self.get_student_data_async()
 
         self.log_message('updating database with scraped data', 'info')
 
@@ -274,6 +297,7 @@ class SnuScraper(object):
             updated_max_num = data['정원']
             updated_num = data['수강신청인원']
 
+            # Query database with SUPER KEY('교과목번호' & '강좌번호')
             lecture = self.db.lectures.find_one({
                 '$and': [
                     { '교과목번호': data['교과목번호'] },
@@ -290,13 +314,6 @@ class SnuScraper(object):
             max_student_num = self.extract_max_student_number(lecture['정원'])
             updated_max_student_num = self.extract_max_student_number(updated_max_num)
 
-            # DELETE LATER (ONLY FOR TESTING PURPOSES)
-            # if updated_max_student_num != max_student_num:
-            #     print(f'LECTURE NAME: {lecture["교과목명"]}')
-            #     print(f'LECTURE NUMBER: {lecture["강좌번호"]}')
-            #     print(f'BEFORE: {max_student_num}')
-            #     print(f'AFTER: {updated_max_num}')
-
             is_full = lecture['isFull']
             query = { '_id': ObjectId(id) }
 
@@ -306,15 +323,13 @@ class SnuScraper(object):
                 
                 messaging_thread = threading.Thread(target=self.send_messages, args=(lecture,))
                 messaging_threads.append(messaging_thread)
-                messaging_thread.start()     
-                # self.send_messages(lecture)          
+                messaging_thread.start()            
             
             elif updated_num >= updated_max_student_num and is_full == False:
                self.log_message(f'2, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {updated_max_student_num}', 'info')
                new_values = {'$set': { '수강신청인원': updated_num, 'isFull': True, '정원': updated_max_num }}
             
             else:
-                # self.log_message(f'3, title: {lecture["교과목명"]}, updated_num: {updated_num}, max_student_num: {max_student_num}', 'info')
                 new_values = {'$set': { '수강신청인원': updated_num, '정원': updated_max_num } }
 
             # Update database
