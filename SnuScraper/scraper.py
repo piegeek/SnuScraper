@@ -235,6 +235,9 @@ class SnuScraper(object):
         return updated_student_data
     
     def send_messages(self, lecture):
+        if self.debug == True:
+            return
+        
         self.log_message('Sending messages', 'info')
         users = lecture['users']
         lecture_title = lecture['교과목명']
