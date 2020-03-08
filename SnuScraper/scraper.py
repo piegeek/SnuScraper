@@ -216,8 +216,8 @@ class SnuScraper(object):
         updated_student_data = []
 
         for i in range(1, self.max_page_num + 1):
-            # LIMIT THE NUMBER OF CONCURRENT REQUESTS TO 5
-            if len(threads) >= 5:
+            # LIMIT THE NUMBER OF CONCURRENT REQUESTS TO 4
+            if len(threads) >= 4:
                 for thread in threads:
                     thread.join()
                 threads.clear()
