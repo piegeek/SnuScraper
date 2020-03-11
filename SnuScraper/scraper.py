@@ -172,7 +172,7 @@ class SnuScraper(object):
         find_data = []
 
         try:
-            res = requests.post(self._site_url, params, timeout=10)
+            res = requests.post(self._site_url, params, timeout=3)
         except requests.exceptions.RequestException as RequestException:
             self.log_message(RequestException, 'error')
             return find_data
