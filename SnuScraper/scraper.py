@@ -193,6 +193,8 @@ class SnuScraper(object):
         return find_data 
 
     def get_page_student_data_async(self, list_to_save, page_num):
+        if self.debug == True: print(f'Updating page #{page_num}')
+
         results = self.get_page_student_data(page_num)
         for result in results:
             list_to_save.append(result)

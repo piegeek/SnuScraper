@@ -1,5 +1,5 @@
 create xls file
-set environment variable for FCM <===== IMPORTANT FOR SENDING MESSAGES OUTSIDE OF PRODUCTION(WITHOUT SYSTEMD)
+set environment variable for FCM(export GOOGLE_APPLICATION_CREDENTIALS) <===== IMPORTANT FOR SENDING MESSAGES OUTSIDE OF PRODUCTION(WITHOUT SYSTEMD)
 
 create database and collection
 
